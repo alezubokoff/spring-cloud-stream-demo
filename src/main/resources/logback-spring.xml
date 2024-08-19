@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <springProperty scope="context" name="service" source="picpay.service.name"/>
+    <springProperty scope="local" name="level" source="picpay.logging.level" defaultValue="INFO"/>
+    <springProperty scope="local" name="appender" source="picpay.logging.appender" defaultValue="CONSOLE-DEV"/>
+    <springProperty scope="context" name="springAppName" source="spring.application.name"/>
+
+    <springProfile name="dev">
+        <!-- configuration to be enabled when the "staging" profile is active -->
+    </springProfile>
+    <springProfile name="test">
+        <!-- configuration to be enabled when the "dev" or "staging" profiles are active -->
+        <property name="LOG_FILE" value="logs/${springAppName}"/>
+    </springProfile>
+
+    <!-- You can override this to have a custom pattern -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}) %yellow(%clr([%t])) %highlight(%clr(${LOG_LEVEL_PATTERN:-%5p})) %magenta(%clr(%logger{1000})){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+
+    <!-- Appender to log to console -->
+    <appender name="CONSOLE-DEV" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <fieldNames>
+                <version>[ignore]</version>
+                <levelValue>[ignore]</levelValue>
+                <timestamp>[ignore]</timestamp>
+            </fieldNames>
+            <provider class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
+                <pattern>
+                    {
+                    "timestamp_app": "%d{YYYY-mm-dd'T'HH:MM:ss.SSSZ}",
+                    "log_type": "APPLICATION",
+                    "log_level": "%level",
+                    "trace": "%X{traceId:-}",
+                    "span": "%X{spanId:-}",
+                    "stack_trace": "%throwable"
+                    }
+                </pattern>
+            </provider>
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                <maxLength>50000</maxLength>
+                <exclude>sun\.reflect\..*\.invoke.*</exclude>
+                <exclude>net\.sf\.cglib\.proxy\.MethodProxy\.invoke</exclude>
+                <rootCauseFirst>true</rootCauseFirst>
+                <inlineHash>true</inlineHash>
+            </throwableConverter>
+        </encoder>
+    </appender>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <arguments/>
+                <pattern>
+                    <pattern>{
+                        "timestamp_app": "%d{HH:mm:ss.SSS}",
+                        "log_type": "APPLICATION",
+                        "log_level": "%level",
+                        "thread": "%thread",
+                        "service": "${springAppName:-}",
+                        "trace": "%X{traceId:-}",
+                        "span": "%X{spanId:-}",
+                        "class": "%logger{1000}",
+                        "message": "%message",
+                        "stack_trace": "%throwable"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+    <root level="${level}">
+        <appender-ref ref="${appender}"/>
+    </root>
+</configuration>

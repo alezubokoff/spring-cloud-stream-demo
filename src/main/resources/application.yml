@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: spring-cloud-stream-demo
+  cloud:
+    stream:
+      kafka:
+        input-in-0:
+          consumer:
+            autoCommitOnError: true
+            autoCommitOffset: true
+          producer:
+            sync: true
+      bindings:
+        input-in-0:
+          destination: customer-inbound
+          content-type: application/json
+          binder: dda-kafka
+        output-in-0:
+          destination: customer-outbound
+          content-type: application/json
+          binder: dda-kafka
+      binders:
+        dda-kafka:
+          type: kafka
+          environment:
+            spring:
+              cloud:
+                stream:
+                  kafka:
+                    binder:
+                      brokers: localhost:9093
